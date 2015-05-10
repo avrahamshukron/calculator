@@ -44,7 +44,29 @@ class BinTreeParser(object):
 
     @classmethod
     def parse(cls, tokens):
-        # TODO parentheses
+        # parentheses:
+        #   find leftmost ")"
+        #   find rightmost "("
+        #   parse everything in between and replace it with the result
+        while True:
+            for close_index, t in enumerate(tokens):
+                if (isinstance(t, Token) and
+                        t.token_type is TokenType.CLOSE_PARENTHESIS):
+                    break
+            else:  # no closing parenthesis
+                break
+            for open_index in range(close_index - 1, -1, -1):
+                t = tokens[open_index]
+                if (isinstance(t, Token) and
+                        t.token_type is TokenType.OPEN_PARENTHESIS):
+                    break
+            else:  # open parenthesis not found, unbalanced parentheses
+                msg = ("No closing parenthesis for closing parenthesis at index %s" %
+                       (close_index,))
+                raise ValueError(msg)
+            tree = cls.parse(tokens[open_index + 1:close_index])
+            tokens = tokens[:open_index] + [tree] + tokens[close_index + 1:]
+
         for priority_group in BinTreeParser.OPERATOR_PRIORITY:
             while True:
                 operator = None
@@ -73,7 +95,7 @@ class BinTreeParser(object):
 
 
 if __name__ == '__main__':
-    lexer = LexicalAnalyzer("2+3*4+4*2")
+    lexer = LexicalAnalyzer("2*(1+1)+1")
     tokens = [t for t in lexer]
     t = BinTreeParser.parse(tokens)
     print t
