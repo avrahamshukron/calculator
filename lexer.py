@@ -2,7 +2,7 @@ __author__ = 'avraham.shukron@gmail.com'
 
 import log_utils
 
-from math_token import TokenType, Token
+from math_token import Tokens
 
 
 class LexicalError(Exception):
@@ -14,7 +14,7 @@ class LexicalAnalyzer(object):
     READ_CHUNK_SIZE = 1024
 
     def __init__(self, input_string, logger=None):
-        self._input_string = input_string
+        self._input_string = input_string.strip()
         self._logger = logger if logger is not None else log_utils.get_logger("lexer")
 
     @staticmethod
@@ -26,15 +26,11 @@ class LexicalAnalyzer(object):
 
         :param input_string: The string to scan.
         :type input_string: str
-        :return: (Token | None, str | None)
+        :return: (Token | None, str | None) The token found, and the remaining string.
         """
-        for regex in TokenType.REGEX_LIST:
-            match = regex.match(input_string)
-            if match is not None:
-                lexeme = match.group()
-                token_type = TokenType.of_regex(regex)
-                remaining_string = input_string[match.end():]
-                return Token(token_type, lexeme), remaining_string
+        for token_class in Tokens.ALL_TOKENS:
+            if token_class.is_a_match(input_string):
+                return token_class.tokenize(input_string)
 
         return None, input_string
 
@@ -52,7 +48,7 @@ class LexicalAnalyzer(object):
 
         next_token, remaining_string = self.find_next_match(self._input_string)
         if next_token is not None:
-            self._input_string = remaining_string
+            self._input_string = remaining_string.strip()
             return next_token
 
         invalid_part = ""
@@ -61,13 +57,13 @@ class LexicalAnalyzer(object):
             remaining_string = remaining_string[1:]
             next_token, remaining_string = self.find_next_match(remaining_string)
 
-        self._input_string = remaining_string
+        self._input_string = remaining_string.strip()
         message = "Invalid syntax: %s" % (invalid_part,)
         self._logger.error(message)
         raise LexicalError(message)
 
 
 if __name__ == '__main__':
-    lexer = LexicalAnalyzer("23(55)*+")
+    lexer = LexicalAnalyzer("23 ( 55 ) * +             66 ")
     for token in lexer:
         print token

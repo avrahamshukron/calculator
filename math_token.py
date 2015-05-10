@@ -11,55 +11,63 @@ MINUS_SIGN = "-"
 PLUS_SIGN = "+"
 
 
-class TokenType(object):
-    TOKEN_TYPE_NUMBER = "Number"
-    TOKEN_TYPE_OPERATOR = "Operator"
-    OPEN_PARENTHESIS = "Open Parenthesis"
-    CLOSE_PARENTHESIS = "Close Parenthesis"
-
-    NUMBER_REGEX = re.compile(r"\d+")
-    OPERATOR_REGEX = re.compile(r"[\+\-\*\^/]")
-    OPEN_PARENTHESIS_REGEX = re.compile(r"\(")
-    CLOSE_PARENTHESIS_REGEX = re.compile(r"\)")
-
-    REGEX_MAP = {
-        NUMBER_REGEX: TOKEN_TYPE_NUMBER,
-        OPERATOR_REGEX: TOKEN_TYPE_OPERATOR,
-        OPEN_PARENTHESIS_REGEX: OPEN_PARENTHESIS,
-        CLOSE_PARENTHESIS_REGEX: CLOSE_PARENTHESIS
-    }
-
-    REGEX_LIST = [
-        NUMBER_REGEX,
-        OPERATOR_REGEX,
-        OPEN_PARENTHESIS_REGEX,
-        CLOSE_PARENTHESIS_REGEX,
-    ]
-
-    @classmethod
-    def of_regex(cls, regex):
-        return cls.REGEX_MAP[regex]
-
-
 class Token(object):
 
-    def __init__(self, token_type, lexeme):
-        self.token_type = token_type
+    REGEX = None  # For subclasses to override.
+
+    @classmethod
+    def is_a_match(cls, string):
+        return cls.REGEX.match(string) is not None
+
+    @classmethod
+    def tokenize(cls, string):
+        match = cls.REGEX.match(string)
+        if match is not None:
+            lexeme = match.group()
+            remaining_string = string[match.end():]
+            return cls(lexeme), remaining_string
+
+        return None, string
+
+    def __init__(self, lexeme):
         self.lexeme = lexeme
 
     def __str__(self):
-        return "%s: '%s'" % (self.token_type, self.lexeme)
+        return "%s: '%s'" % (self.__class__.__name__, self.lexeme)
 
-    def __repr__(self):
-        return "%s('%s', '%s')" % (self.__class__.__name__, self.token_type, self.lexeme)
+
+def subtract(x, y=None):
+    """
+    An implementation for the `"-"` operator. It supports both of its versions:
+        - Binary operator: As expected.
+        - Unary Prefix Operator: Adds an implicit `0` as the left operand.
+
+    :param x: The first operand.
+    :param y: The second operand. Can be omitted.
+    :return: The result of `x - y` for binary operation, or `-x` for unary.
+    """
+    left = x if y is not None else 0
+    right = y if y is not None else x
+    return left - right
 
 
 class Operator(Token):
+    """
+    Represents an operator.
+    """
+    MAP = {
+        PLUS_SIGN: (1, lambda x, y: x + y),
+        MINUS_SIGN: (1, subtract),
+        STAR_SIGN: (2, lambda x, y: x * y),
+        SLASH_SIGN: (2, lambda x, y: x / y),
+        CARET_SIGN: (3, math.pow),
+    }
 
-    def __init__(self, symbol, priority, func):
-        Token.__init__(self, TokenType.TOKEN_TYPE_OPERATOR, symbol)
-        self.priority = priority
-        self.func = func
+    REGEX = re.compile("[%s]" % (re.escape("".join(MAP.keys()))))
+
+    def __init__(self, lexeme):
+        Token.__init__(self, lexeme)
+        self.priority, self.func = self.MAP[lexeme]
 
     def __cmp__(self, other):
         return self.priority.__cmp__(other.priority)
@@ -68,33 +76,28 @@ class Operator(Token):
         self.func(*args, **kwargs)
 
 
-class Operators(object):
+class Number(Token):
 
-    @staticmethod
-    def subtract(x, y=None):
-        """
-        An implementation for the `"-"` operator. It supports both of its versions:
-            - Binary operator: As expected.
-            - Unary Prefix Operator: Adds an implicit `0` as the left operand.
+    REGEX = re.compile(r"\d+")
 
-        :param x: The first operand.
-        :param y: The second operand. Can be omitted.
-        :return: The result of `x - y` for binary operation, or `-x` for unary.
-        """
-        left = x if y is not None else 0
-        right = y if y is not None else x
-        return left - right
+    def __init__(self, lexeme):
+        Token.__init__(self, lexeme)
+        self.value = float(lexeme)
 
-    PLUS = Operator(PLUS_SIGN, 1, lambda x, y: x + y)
-    MINUS = Operator(MINUS_SIGN, 1, subtract)
-    MULTIPLY = Operator(STAR_SIGN, 2, lambda x, y: x * y)
-    DIVIDE = Operator(SLASH_SIGN, 2, lambda x, y: x / y)
-    POWER = Operator(CARET_SIGN, 3, math.pow)
 
-    MAP = {
-        PLUS_SIGN: PLUS,
-        MINUS_SIGN: MINUS,
-        STAR_SIGN: MULTIPLY,
-        SLASH_SIGN: DIVIDE,
-        CARET_SIGN: POWER,
-    }
+class LeftParenthesis(Token):
+    REGEX = re.compile(r"\(")
+
+
+class RightParenthesis(Token):
+    REGEX = re.compile(r"\)")
+
+
+class Tokens(object):
+
+    ALL_TOKENS = [
+        Number,
+        Operator,
+        LeftParenthesis,
+        RightParenthesis,
+    ]
