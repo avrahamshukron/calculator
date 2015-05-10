@@ -17,23 +17,12 @@ class TokenType(object):
     OPEN_PARENTHESIS = "Open Parenthesis"
     CLOSE_PARENTHESIS = "Close Parenthesis"
 
-    NUMBER_PATTERN = r"\d+"
-    NUMBER_REGEX = re.compile(NUMBER_PATTERN, re.VERBOSE)
-
-    BINARY_OP_PATTERN = r"[\+\-\*/%$]"
-    BINARY_OP_REGEX = re.compile(BINARY_OP_PATTERN, re.VERBOSE)
-
-    UNARY_PREFIX_OP_PATTERN = r"[~]"
-    UNARY_PREFIX_OP_REGEX = re.compile(UNARY_PREFIX_OP_PATTERN, re.VERBOSE)
-
-    UNARY_SUFFIX_OP_PATTERN = r"[!]"
-    UNARY_SUFFIX_OP_REGEX = re.compile(UNARY_SUFFIX_OP_PATTERN, re.VERBOSE)
-
-    OPEN_PARENTHESIS_PATTERN = r"\("
-    OPEN_PARENTHESIS_REGEX = re.compile(OPEN_PARENTHESIS_PATTERN, re.VERBOSE)
-
-    CLOSE_PARENTHESIS_PATTERN = r"\)"
-    CLOSE_PARENTHESIS_REGEX = re.compile(CLOSE_PARENTHESIS_PATTERN, re.VERBOSE)
+    NUMBER_REGEX = re.compile(r"\d+", re.VERBOSE)
+    BINARY_OP_REGEX = re.compile(r"[\+\-\*/%$]", re.VERBOSE)
+    UNARY_PREFIX_OP_REGEX = re.compile(r"[~]", re.VERBOSE)
+    UNARY_SUFFIX_OP_REGEX = re.compile(r"[!]", re.VERBOSE)
+    OPEN_PARENTHESIS_REGEX = re.compile(r"\(", re.VERBOSE)
+    CLOSE_PARENTHESIS_REGEX = re.compile(r"\)", re.VERBOSE)
 
     REGEX_MAP = {
         NUMBER_REGEX: TOKEN_TYPE_NUMBER,
