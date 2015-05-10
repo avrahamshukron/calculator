@@ -7,4 +7,10 @@ class Calculator(object):
         self._stack = []
         self._token_list = []
 
-    def evaluate(self):
+    def evaluate(self, expression):
+        """
+        Evaluate the current stack and return the result.
+
+        :return: The result of the expression.
+        """
+        pass
