@@ -46,7 +46,6 @@ class BinTreeParser(object):
     def parse(cls, tokens):
         # TODO parentheses
         for priority_group in BinTreeParser.OPERATOR_PRIORITY:
-            cls._logger.debug("starting priority group %s", priority_group)
             while True:
                 operator = None
                 for index, t in enumerate(tokens):
@@ -58,17 +57,24 @@ class BinTreeParser(object):
                         break
                 if operator is None:
                     break
-                cls._logger.debug("found operator %s at index %s", operator,
-                                  index)
                 tree = BinTree(operator, tokens[index - 1], tokens[index + 1])
                 tokens = tokens[:index - 1] + [tree] + tokens[index + 2:]
         assert len(tokens) == 1, ("%s did not consume all tokens" %
                                   (cls.__name__,))
         return tokens[0]
 
+    @classmethod
+    def solve(cls, tree):
+        if isinstance(tree, Token):  # a number
+            return float(tree.lexeme)
+        left = cls.solve(tree.left)
+        right = cls.solve(tree.right)
+        return tree.value.func(left, right)
+
 
 if __name__ == '__main__':
-    lexer = LexicalAnalyzer("2+3*4")
+    lexer = LexicalAnalyzer("2+3*4+4*2")
     tokens = [t for t in lexer]
     t = BinTreeParser.parse(tokens)
     print t
+    print BinTreeParser.solve(t)
