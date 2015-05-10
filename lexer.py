@@ -2,7 +2,7 @@ __author__ = 'avraham.shukron@gmail.com'
 
 import log_utils
 
-from token import TokenType, Token
+from math_token import TokenType, Token
 
 
 class LexicalError(Exception):

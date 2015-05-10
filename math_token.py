@@ -17,25 +17,21 @@ class TokenType(object):
     OPEN_PARENTHESIS = "Open Parenthesis"
     CLOSE_PARENTHESIS = "Close Parenthesis"
 
-    NUMBER_REGEX = re.compile(r"\d+", re.VERBOSE)
-    BINARY_OP_REGEX = re.compile(r"[\+\-\*/%$]", re.VERBOSE)
-    UNARY_PREFIX_OP_REGEX = re.compile(r"[~]", re.VERBOSE)
-    UNARY_SUFFIX_OP_REGEX = re.compile(r"[!]", re.VERBOSE)
-    OPEN_PARENTHESIS_REGEX = re.compile(r"\(", re.VERBOSE)
-    CLOSE_PARENTHESIS_REGEX = re.compile(r"\)", re.VERBOSE)
+    NUMBER_REGEX = re.compile(r"\d+")
+    OPERATOR_REGEX = re.compile(r"[\+\-\*\^/]")
+    OPEN_PARENTHESIS_REGEX = re.compile(r"\(")
+    CLOSE_PARENTHESIS_REGEX = re.compile(r"\)")
 
     REGEX_MAP = {
         NUMBER_REGEX: TOKEN_TYPE_NUMBER,
-        BINARY_OP_REGEX: TOKEN_TYPE_OPERATOR,
+        OPERATOR_REGEX: TOKEN_TYPE_OPERATOR,
         OPEN_PARENTHESIS_REGEX: OPEN_PARENTHESIS,
         CLOSE_PARENTHESIS_REGEX: CLOSE_PARENTHESIS
     }
 
     REGEX_LIST = [
         NUMBER_REGEX,
-        BINARY_OP_REGEX,
-        UNARY_PREFIX_OP_REGEX,
-        UNARY_SUFFIX_OP_REGEX,
+        OPERATOR_REGEX,
         OPEN_PARENTHESIS_REGEX,
         CLOSE_PARENTHESIS_REGEX,
     ]
