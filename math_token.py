@@ -29,8 +29,10 @@ class Token(object):
 
         return None, string
 
-    def __init__(self, lexeme):
+    def __init__(self, lexeme, start_position=0, end_position=1):
         self.lexeme = lexeme
+        self.start_position = start_position
+        self.end_position = end_position
 
     def __str__(self):
         return "%s: '%s'" % (self.__class__.__name__, self.lexeme)
@@ -85,11 +87,11 @@ class Number(Token):
         self.value = float(lexeme)
 
 
-class LeftParenthesis(Token):
+class OpenParenthesis(Token):
     REGEX = re.compile(r"\(")
 
 
-class RightParenthesis(Token):
+class CloseParenthesis(Token):
     REGEX = re.compile(r"\)")
 
 
@@ -98,6 +100,6 @@ class Tokens(object):
     ALL_TOKENS = [
         Number,
         Operator,
-        LeftParenthesis,
-        RightParenthesis,
+        OpenParenthesis,
+        CloseParenthesis,
     ]
