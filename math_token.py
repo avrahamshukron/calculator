@@ -57,25 +57,59 @@ class Operator(Token):
     """
     Represents an operator.
     """
-    MAP = {
-        PLUS_SIGN: (1, lambda x, y: x + y),
-        MINUS_SIGN: (1, subtract),
-        STAR_SIGN: (2, lambda x, y: x * y),
-        SLASH_SIGN: (2, lambda x, y: x / y),
-        CARET_SIGN: (3, math.pow),
-    }
 
-    REGEX = re.compile("[%s]" % (re.escape("".join(MAP.keys()))))
+    # REGEX is set in Operators
 
-    def __init__(self, lexeme):
+    def __init__(self, lexeme, func=None, priority=None):
         Token.__init__(self, lexeme)
-        self.priority, self.func = self.MAP[lexeme]
+        # if func is not provided, we are initialized as a standard Token and
+        # should look for our func and priority in Operators
+        if func is None:
+            op = Operators.find_op(lexeme)
+            priority = op.priority
+            func = op.func
+        self.priority = priority
+        self.func = func
 
     def __cmp__(self, other):
         return self.priority.__cmp__(other.priority)
 
     def __call__(self, *args, **kwargs):
-        self.func(*args, **kwargs)
+        return self.func(*args, **kwargs)
+
+
+class Operators(object):
+
+    # Initialize all priority values to None. They will be set dynamically by
+    # a for loop after priority groups are defined
+
+    ADD = Operator(PLUS_SIGN, lambda x, y: x + y)
+    SUBTRACT = Operator(MINUS_SIGN, subtract)
+    MULTIPLY = Operator(STAR_SIGN, lambda x, y: x * y)
+    DIVIDE = Operator(SLASH_SIGN, lambda x, y: x / y)
+    POWER = Operator(CARET_SIGN, math.pow)
+
+    PRIORITY_GROUPS = (
+        (POWER,),
+        (MULTIPLY, DIVIDE),
+        (ADD, SUBTRACT),
+    )
+
+    ALL_OPERATORS = ("".join("".join(operator.lexeme for operator in group)
+                     for group in PRIORITY_GROUPS))
+    Operator.REGEX = re.compile("[%s]" % (re.escape(ALL_OPERATORS)))
+
+    for priority, group in enumerate(PRIORITY_GROUPS):
+        for operator in group:
+            operator.priority = priority
+
+    @classmethod
+    def find_op(cls, lexeme):
+        for group in cls.PRIORITY_GROUPS:
+            for operator in group:
+                if operator.lexeme == lexeme:
+                    return operator
+        raise ValueError("No operator with lexeme %s" % (lexeme,))
 
 
 class Number(Token):

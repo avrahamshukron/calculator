@@ -4,7 +4,8 @@ __author__ = "tal.shorer@gmail.com"
 
 
 from lexer import LexicalAnalyzer
-from math_token import TokenType, Token, Operators
+from math_token import (Number, Operator, OpenParenthesis, CloseParenthesis,
+                        Operators)
 from bintree import BinTree
 import log_utils
 
@@ -13,17 +14,10 @@ class BinTreeParser(object):
 
     _logger = log_utils.get_logger("bt_parser")
 
-    OPERATOR_PRIORITY = (
-        (Operators.POWER,),
-        (Operators.MULTIPLY, Operators.DIVIDE),
-        (Operators.PLUS, Operators.MINUS),
-    )
-
     @classmethod
     def _search_in_group(cls, t, priority_group):
         for operator in priority_group:
-            if (t.token_type == operator.token_type and
-                    t.lexeme == operator.lexeme):
+            if t.lexeme == operator.lexeme:
                 return operator
         return None
 
@@ -35,15 +29,13 @@ class BinTreeParser(object):
         #   parse everything in between and replace it with the result
         while True:
             for close_index, t in enumerate(tokens):
-                if (isinstance(t, Token) and
-                        t.token_type is TokenType.CLOSE_PARENTHESIS):
+                if isinstance(t, CloseParenthesis):
                     break
             else:  # no closing parenthesis
                 break
             for open_index in range(close_index - 1, -1, -1):
                 t = tokens[open_index]
-                if (isinstance(t, Token) and
-                        t.token_type is TokenType.OPEN_PARENTHESIS):
+                if isinstance(t, OpenParenthesis):
                     break
             else:  # open parenthesis not found, unbalanced parentheses
                 msg = ("No closing parenthesis for closing parenthesis at index %s" %
@@ -52,12 +44,11 @@ class BinTreeParser(object):
             tree = cls.parse(tokens[open_index + 1:close_index])
             tokens = tokens[:open_index] + [tree] + tokens[close_index + 1:]
 
-        for priority_group in BinTreeParser.OPERATOR_PRIORITY:
+        for priority_group in Operators.PRIORITY_GROUPS:
             while True:
                 operator = None
                 for index, t in enumerate(tokens):
-                    if (not isinstance(t, Token) or t.token_type is not
-                            TokenType.TOKEN_TYPE_OPERATOR):
+                    if not isinstance(t, Operator):
                         continue
                     operator = cls._search_in_group(t, priority_group)
                     if operator is not None:
@@ -72,11 +63,11 @@ class BinTreeParser(object):
 
     @classmethod
     def solve(cls, tree):
-        if isinstance(tree, Token):  # a number
-            return float(tree.lexeme)
+        if isinstance(tree, Number):  # a number
+            return tree.value
         left = cls.solve(tree.left)
         right = cls.solve(tree.right)
-        return tree.value.func(left, right)
+        return tree.value(left, right)
 
 
 if __name__ == '__main__':
