@@ -4,8 +4,8 @@ __author__ = "tal.shorer@gmail.com"
 
 
 from lexer import LexicalAnalyzer
-from math_token import (Number, Operator, OpenParenthesis, CloseParenthesis,
-                        Operators)
+from math_token import (Number, OpenParenthesis, CloseParenthesis, Operators,
+                        Operator)
 from bintree import BinTree
 import log_utils
 
@@ -13,13 +13,6 @@ import log_utils
 class BinTreeParser(object):
 
     _logger = log_utils.get_logger("bt_parser")
-
-    @classmethod
-    def _search_in_group(cls, t, priority_group):
-        for operator in priority_group:
-            if t.lexeme == operator.lexeme:
-                return operator
-        return None
 
     @classmethod
     def parse(cls, tokens):
@@ -44,16 +37,16 @@ class BinTreeParser(object):
             tree = cls.parse(tokens[open_index + 1:close_index])
             tokens = tokens[:open_index] + [tree] + tokens[close_index + 1:]
 
-        for priority_group in Operators.PRIORITY_GROUPS:
+        for operator in Operators.ALL_OPERATORS:
             while True:
-                operator = None
+                hit = False
                 for index, t in enumerate(tokens):
                     if not isinstance(t, Operator):
                         continue
-                    operator = cls._search_in_group(t, priority_group)
-                    if operator is not None:
+                    if t == operator:
+                        hit = True
                         break
-                if operator is None:
+                if not hit:
                     break
                 tree = BinTree(operator, tokens[index - 1], tokens[index + 1])
                 tokens = tokens[:index - 1] + [tree] + tokens[index + 2:]
@@ -70,9 +63,13 @@ class BinTreeParser(object):
         return tree.value(left, right)
 
 
-if __name__ == '__main__':
+def test_parser():
     lexer = LexicalAnalyzer("2*(1+1)+1")
     tokens = [t for t in lexer]
     t = BinTreeParser.parse(tokens)
     print t
     print BinTreeParser.solve(t)
+
+
+if __name__ == '__main__':
+    test_parser()

@@ -70,7 +70,7 @@ class ShuntingYardParser(object):
 def test():
     logger = log_utils.get_logger("ShuntingYardParser")
     parser = ShuntingYardParser("(2+1)*7", logger)
-    print [str(token) for token in parser.parse()]
+    print [token.lexeme for token in parser.parse()]
 
 
 if __name__ == '__main__':
