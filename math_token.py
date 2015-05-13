@@ -16,8 +16,8 @@ class Token(object):
     REGEX = None  # For subclasses to override.
 
     @classmethod
-    def is_a_match(cls, string):
-        return cls.REGEX.match(string) is not None
+    def match(cls, string):
+        return cls.REGEX.match(string)
 
     @classmethod
     def tokenize(cls, string):
@@ -58,18 +58,36 @@ class Operator(Token):
     Represents an operator.
     """
 
-    # REGEX is set in Operators
+    PRIORITY_GROUPS = (
+        (CARET_SIGN,),
+        (STAR_SIGN, SLASH_SIGN),
+        (PLUS_SIGN, MINUS_SIGN),
+    )
+
+    FUNCS = {
+        PLUS_SIGN: lambda x, y: x + y,
+        MINUS_SIGN: subtract,
+        STAR_SIGN: lambda x, y: x * y,
+        SLASH_SIGN: lambda x, y: x / y,
+        CARET_SIGN: math.pow,
+    }
+
+    @classmethod
+    def find_priority(cls, lexeme):
+        for priority, group in enumerate(cls.PRIORITY_GROUPS):
+            for symbol in group:
+                if symbol == lexeme:
+                    return priority
+        raise ValueError("No priority is known for %s" % (lexeme,))
+
+    ALL_OPERATORS = ("".join("".join(group) for group in PRIORITY_GROUPS))
+    REGEX = re.compile("[%s]" % (re.escape(ALL_OPERATORS)))
 
     def __init__(self, lexeme, func=None, priority=None):
         Token.__init__(self, lexeme)
-        # if func is not provided, we are initialized as a standard Token and
-        # should look for our func and priority in Operators
-        if func is None:
-            op = Operators.find_op(lexeme)
-            priority = op.priority
-            func = op.func
-        self.priority = priority
-        self.func = func
+        self.func = func if func is not None else self.FUNCS[lexeme]
+        self.priority = (priority if priority is not None
+                         else self.find_priority(lexeme))
 
     def __cmp__(self, other):
         return self.priority.__cmp__(other.priority)
@@ -80,45 +98,47 @@ class Operator(Token):
 
 class Operators(object):
 
-    # Initialize all priority values to None. They will be set dynamically by
-    # a for loop after priority groups are defined
+    ADD = Operator(PLUS_SIGN)
+    SUBTRACT = Operator(MINUS_SIGN)
+    MULTIPLY = Operator(STAR_SIGN)
+    DIVIDE = Operator(SLASH_SIGN)
+    POWER = Operator(CARET_SIGN)
 
-    ADD = Operator(PLUS_SIGN, lambda x, y: x + y)
-    SUBTRACT = Operator(MINUS_SIGN, subtract)
-    MULTIPLY = Operator(STAR_SIGN, lambda x, y: x * y)
-    DIVIDE = Operator(SLASH_SIGN, lambda x, y: x / y)
-    POWER = Operator(CARET_SIGN, math.pow)
-
-    PRIORITY_GROUPS = (
-        (POWER,),
-        (MULTIPLY, DIVIDE),
-        (ADD, SUBTRACT),
-    )
-
-    ALL_OPERATORS = ("".join("".join(operator.lexeme for operator in group)
-                     for group in PRIORITY_GROUPS))
-    Operator.REGEX = re.compile("[%s]" % (re.escape(ALL_OPERATORS)))
-
-    for priority, group in enumerate(PRIORITY_GROUPS):
-        for operator in group:
-            operator.priority = priority
-
-    @classmethod
-    def find_op(cls, lexeme):
-        for group in cls.PRIORITY_GROUPS:
-            for operator in group:
-                if operator.lexeme == lexeme:
-                    return operator
-        raise ValueError("No operator with lexeme %s" % (lexeme,))
+    # All the operators, ordered by their priority, from top to bottom.
+    ALL_OPERATORS = sorted([ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER],
+                           key=lambda o: o.priority, reverse=True)
 
 
 class Number(Token):
 
-    REGEX = re.compile(r"\d+")
+    NUMBER_TYPE = None
 
     def __init__(self, lexeme):
         Token.__init__(self, lexeme)
-        self.value = float(lexeme)
+        self.value = self.NUMBER_TYPE(lexeme)
+
+    def __repr__(self):
+        return "%s" % (self.value,)
+
+
+class IntegerNumber(Number):
+    """
+    Represents an integer number.
+    Integer number is a series of digits that DOES NOT followed by a dot.
+    """
+    REGEX = re.compile(r"\d+")
+    NUMBER_TYPE = int
+
+
+class FloatingPointNumber(Number):
+    """
+    Represents a floating-point number.
+    Floating point number is written with 0 or more leading digits representing
+    the integer part, followed by a dot, followed by 0 or more digits
+    representing the fraction.
+    """
+    REGEX = re.compile(r"\d*\.\d+")
+    NUMBER_TYPE = float
 
 
 class OpenParenthesis(Token):
@@ -132,7 +152,8 @@ class CloseParenthesis(Token):
 class Tokens(object):
 
     ALL_TOKENS = [
-        Number,
+        IntegerNumber,
+        FloatingPointNumber,
         Operator,
         OpenParenthesis,
         CloseParenthesis,
