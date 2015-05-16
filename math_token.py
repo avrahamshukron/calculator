@@ -78,7 +78,7 @@ class Operator(Token):
     @classmethod
     def get_known_operator_data(cls, lexeme):
         for priority, group in enumerate(cls.KNOWN_OPERATORS):
-            for lexeme in group:
+            if lexeme in group:
                 return priority, group[lexeme]
         return None, None
 
