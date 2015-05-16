@@ -31,24 +31,23 @@ class BinTreeParser(object):
                 if isinstance(t, OpenParenthesis):
                     break
             else:  # open parenthesis not found, unbalanced parentheses
-                msg = ("No closing parenthesis for closing parenthesis at index %s" %
-                       (close_index,))
-                raise ValueError(msg)
+                # TODO better error message including the token's span
+                raise ValueError("unbalanced parentheses")
             tree = cls.parse(tokens[open_index + 1:close_index])
             tokens = tokens[:open_index] + [tree] + tokens[close_index + 1:]
 
-        for operator in Operators.ALL_OPERATORS:
+        for group in Operators.ALL_OPERATORS:
             while True:
                 hit = False
                 for index, t in enumerate(tokens):
                     if not isinstance(t, Operator):
                         continue
-                    if t == operator:
+                    if t in group:
                         hit = True
                         break
                 if not hit:
                     break
-                tree = BinTree(operator, tokens[index - 1], tokens[index + 1])
+                tree = BinTree(t, tokens[index - 1], tokens[index + 1])
                 tokens = tokens[:index - 1] + [tree] + tokens[index + 2:]
         assert len(tokens) == 1, ("%s did not consume all tokens" %
                                   (cls.__name__,))
