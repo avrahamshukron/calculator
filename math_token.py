@@ -34,7 +34,11 @@ class Token(object):
         self.start_position = start_position
         self.end_position = end_position
 
-    def __str__(self):
+    def __cmp__(self, other):
+        print self, other
+        return self.lexeme == other.lexeme
+
+    def __repr__(self):
         return "%s: '%s'" % (self.__class__.__name__, self.lexeme)
 
 
@@ -95,19 +99,14 @@ class Operator(Token):
         if self.func is None:
             raise ValueError("Unspecified operator func")
 
-    def __cmp__(self, other):
-        return self.priority.__cmp__(other.priority)
-
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
 
 
 class Operators(object):
     # All the operators, ordered by their priority, from top to bottom.
-    ALL_OPERATORS = sorted([Operator(symbol) for symbol
-                            in [group.keys() for group
-                                in Operator.KNOWN_OPERATORS]],
-                           key=lambda o: o.priority, reverse=True)
+    ALL_OPERATORS = [[Operator(symbol) for symbol in group]
+                     for group in Operator.KNOWN_OPERATORS]
 
 
 class Number(Token):
