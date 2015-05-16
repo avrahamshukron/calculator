@@ -58,36 +58,42 @@ class Operator(Token):
     Represents an operator.
     """
 
-    PRIORITY_GROUPS = (
-        (CARET_SIGN,),
-        (STAR_SIGN, SLASH_SIGN),
-        (PLUS_SIGN, MINUS_SIGN),
+    KNOWN_OPERATORS = (
+        {
+            CARET_SIGN: math.pow,
+        },
+        {
+            STAR_SIGN: lambda x, y: x * y,
+            SLASH_SIGN: lambda x, y: x / y,
+        },
+        {
+            PLUS_SIGN: lambda x, y: x + y,
+            MINUS_SIGN: subtract,
+        },
     )
 
-    FUNCS = {
-        PLUS_SIGN: lambda x, y: x + y,
-        MINUS_SIGN: subtract,
-        STAR_SIGN: lambda x, y: x * y,
-        SLASH_SIGN: lambda x, y: x / y,
-        CARET_SIGN: math.pow,
-    }
+    SYMBOLS = ("".join("".join(group.keys()) for group in KNOWN_OPERATORS))
+    REGEX = re.compile("[%s]" % (re.escape(SYMBOLS)))
 
     @classmethod
-    def find_priority(cls, lexeme):
-        for priority, group in enumerate(cls.PRIORITY_GROUPS):
-            for symbol in group:
-                if symbol == lexeme:
-                    return priority
-        raise ValueError("No priority is known for %s" % (lexeme,))
-
-    ALL_OPERATORS = ("".join("".join(group) for group in PRIORITY_GROUPS))
-    REGEX = re.compile("[%s]" % (re.escape(ALL_OPERATORS)))
+    def get_known_operator_data(cls, lexeme):
+        for priority, group in enumerate(cls.KNOWN_OPERATORS):
+            for lexeme in group:
+                return priority, group[lexeme]
+        return None, None
 
     def __init__(self, lexeme, func=None, priority=None):
         Token.__init__(self, lexeme)
-        self.func = func if func is not None else self.FUNCS[lexeme]
+
+        known_priority, known_func = self.get_known_operator_data(lexeme)
+        self.func = func if func is not None else known_func
         self.priority = (priority if priority is not None
-                         else self.find_priority(lexeme))
+                         else known_priority)
+        if self.priority is None:
+            raise ValueError("Unspecified priority")
+
+        if self.func is None:
+            raise ValueError("Unspecified operator func")
 
     def __cmp__(self, other):
         return self.priority.__cmp__(other.priority)
@@ -97,15 +103,10 @@ class Operator(Token):
 
 
 class Operators(object):
-
-    ADD = Operator(PLUS_SIGN)
-    SUBTRACT = Operator(MINUS_SIGN)
-    MULTIPLY = Operator(STAR_SIGN)
-    DIVIDE = Operator(SLASH_SIGN)
-    POWER = Operator(CARET_SIGN)
-
     # All the operators, ordered by their priority, from top to bottom.
-    ALL_OPERATORS = sorted([ADD, SUBTRACT, MULTIPLY, DIVIDE, POWER],
+    ALL_OPERATORS = sorted([Operator(symbol) for symbol
+                            in [group.keys() for group
+                                in Operator.KNOWN_OPERATORS]],
                            key=lambda o: o.priority, reverse=True)
 
 
