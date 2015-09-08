@@ -38,14 +38,12 @@ class BinTreeParser(object):
 
         for group in Operators.ALL_OPERATORS:
             while True:
-                hit = False
                 for index, t in enumerate(tokens):
                     if not isinstance(t, Operator):
                         continue
                     if t in group:
-                        hit = True
                         break
-                if not hit:
+                else:  # did not find an operator in wanted group
                     break
                 tree = BinTree(t, tokens[index - 1], tokens[index + 1])
                 tokens = tokens[:index - 1] + [tree] + tokens[index + 2:]
